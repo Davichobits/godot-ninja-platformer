@@ -1,5 +1,8 @@
 extends CharacterBody2D
 
+enum states { MOVE, CLIMB }
+
+@export var state := states.MOVE
 @export var max_speed: = 120
 @export var acceleration: = 1000
 @export var air_acceleration: = 2000
@@ -8,6 +11,8 @@ extends CharacterBody2D
 @export var up_gravity: = 500
 @export var down_gravity: = 600
 @export var jump_amount: = 200
+
+var coyote_time: = 0.0
 
 @onready var animation_player_upper: AnimationPlayer = $AnimationPlayerUpper
 @onready var animation_player_lower: AnimationPlayer = $AnimationPlayerLower
@@ -26,30 +31,37 @@ func _ready() -> void:
 	)
 
 func _physics_process(delta: float) -> void:
-	var x_input = Input.get_axis("left", "right")
-	
-	apply_gravity(delta)
-	
-	# accelerate_horizontally(x_input, delta)
-	
-	if Input.is_action_just_pressed("jump") and is_on_floor():
-		velocity.y = -jump_amount
-	
-	if Input.is_action_just_pressed("attack"):
-		animation_player_upper.play("attack")
-	
-	if x_input != 0:
-		animation_player_lower.play("run")
-		anchor.scale.x = sign(x_input)
-		accelerate_horizontally(x_input, delta)
-	else:
-		apply_friction(delta)
-		animation_player_lower.play("stand")
-		
-	if not is_on_floor():	
-		animation_player_lower.play("jump")
-		
-	move_and_slide()
+	match state:
+		states.MOVE:
+			coyote_time -= delta
+			
+			var x_input = Input.get_axis("left", "right")
+			
+			apply_gravity(delta)
+			
+			if Input.is_action_just_pressed("jump") and (is_on_floor() or coyote_time > 0):
+				velocity.y = -jump_amount
+			
+			if Input.is_action_just_pressed("attack"):
+				animation_player_upper.play("attack")
+			
+			if x_input != 0:
+				animation_player_lower.play("run")
+				anchor.scale.x = sign(x_input)
+				accelerate_horizontally(x_input, delta)
+			else:
+				apply_friction(delta)
+				animation_player_lower.play("stand")
+				
+			if not is_on_floor():	
+				animation_player_lower.play("jump")
+			
+			var was_on_floor: = is_on_floor()
+			move_and_slide()
+			if was_on_floor and not is_on_floor() and velocity.y >= 0:
+				coyote_time = 0.2
+		states.CLIMB:
+			pass
 
 func accelerate_horizontally(horizontal_direction: float, delta:float) -> void:
 	var acceleration_amount: = acceleration
