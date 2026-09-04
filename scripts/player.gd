@@ -28,9 +28,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	var x_input = Input.get_axis("left", "right")
 	
-	if not is_on_floor():
-		velocity.y += up_gravity * delta
-		animation_player_lower.play("jump")
+	apply_gravity(delta)
 	
 	# accelerate_horizontally(x_input, delta)
 	
@@ -62,3 +60,10 @@ func apply_friction(delta) -> void:
 	var friction_amonunt: = friction
 	if not is_on_floor(): friction_amonunt = air_friction
 	velocity.x = move_toward(velocity.x, 0.0, friction_amonunt * delta)
+
+func apply_gravity(delta) -> void:
+	if not is_on_floor():
+		if velocity.y <= 0:
+			velocity.y += up_gravity * delta
+		else:
+			velocity.y += down_gravity * delta
