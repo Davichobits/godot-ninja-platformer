@@ -40,7 +40,7 @@ func _physics_process(delta: float) -> void:
 			apply_gravity(delta)
 			
 			if Input.is_action_just_pressed("jump") and (is_on_floor() or coyote_time > 0):
-				velocity.y = -jump_amount
+				jump()
 			
 			if Input.is_action_just_pressed("attack"):
 				animation_player_upper.play("attack")
@@ -59,14 +59,31 @@ func _physics_process(delta: float) -> void:
 			var was_on_floor: = is_on_floor()
 			move_and_slide()
 			if was_on_floor and not is_on_floor() and velocity.y >= 0:
-				coyote_time = 0.2
+				coyote_time = 0.1
+			
+			if should_wall_climb():
+				state = states.CLIMB
+			
 		states.CLIMB:
-			pass
+			var y_axis = Input.get_axis("up", "down")
+			velocity.y = y_axis * max_speed * 0.8
+			move_and_slide()
+			
+			if y_axis != 0:
+				animation_player_upper.play("climb")
+				animation_player_lower.play("climb")
+			else:
+				animation_player_upper.play("hang")
+				animation_player_lower.play("hang")
 
 func accelerate_horizontally(horizontal_direction: float, delta:float) -> void:
 	var acceleration_amount: = acceleration
 	if not is_on_floor(): acceleration_amount = air_acceleration
 	velocity.x = move_toward(velocity.x, max_speed * horizontal_direction, acceleration_amount * delta * abs(horizontal_direction))
+	
+func accelerate_vertically(vertical_direction: float, delta:float) -> void:
+	var acceleration_amount: = acceleration
+	velocity.y = move_toward(velocity.y, max_speed * vertical_direction, acceleration_amount * delta * abs(vertical_direction))
 	
 func apply_friction(delta) -> void:
 	var friction_amonunt: = friction
@@ -79,3 +96,9 @@ func apply_gravity(delta) -> void:
 			velocity.y += up_gravity * delta
 		else:
 			velocity.y += down_gravity * delta
+
+func jump() -> void:
+	velocity.y = -jump_amount
+	
+func should_wall_climb() -> bool:
+	return is_on_wall_only()
