@@ -1,8 +1,8 @@
 extends CharacterBody2D
 
-enum states { MOVE, CLIMB }
+enum STATES { MOVE, CLIMB }
 
-@export var state := states.MOVE
+@export var state := STATES.MOVE
 @export var max_speed: = 120
 @export var acceleration: = 1000
 @export var air_acceleration: = 2000
@@ -11,6 +11,8 @@ enum states { MOVE, CLIMB }
 @export var up_gravity: = 500
 @export var down_gravity: = 600
 @export var jump_amount: = 200
+@onready var ray_cast_upper: RayCast2D = $Anchor/RayCastUpper
+@onready var ray_cast_lower: RayCast2D = $Anchor/RayCastLower
 
 var coyote_time: = 0.0
 
@@ -32,10 +34,10 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	match state:
-		states.MOVE:
+		STATES.MOVE:
 			coyote_time -= delta
 			
-			var x_input = Input.get_axis("left", "right")
+			var x_axis = Input.get_axis("left", "right")
 			
 			apply_gravity(delta)
 			
@@ -45,10 +47,10 @@ func _physics_process(delta: float) -> void:
 			if Input.is_action_just_pressed("attack"):
 				animation_player_upper.play("attack")
 			
-			if x_input != 0:
+			if x_axis != 0:
 				animation_player_lower.play("run")
-				anchor.scale.x = sign(x_input)
-				accelerate_horizontally(x_input, delta)
+				anchor.scale.x = sign(x_axis)
+				accelerate_horizontally(x_axis, delta)
 			else:
 				apply_friction(delta)
 				animation_player_lower.play("stand")
@@ -62,19 +64,26 @@ func _physics_process(delta: float) -> void:
 				coyote_time = 0.1
 			
 			if should_wall_climb():
-				state = states.CLIMB
+				state = STATES.CLIMB
 			
-		states.CLIMB:
+		STATES.CLIMB:
+			var wall_normal = get_wall_normal()
 			var y_axis = Input.get_axis("up", "down")
+			var x_axis = Input.get_axis("left", "right")
 			velocity.y = y_axis * max_speed * 0.8
 			move_and_slide()
 			
 			if y_axis != 0:
-				animation_player_upper.play("climb")
+				#animation_player_upper.play("climb")
 				animation_player_lower.play("climb")
 			else:
-				animation_player_upper.play("hang")
+				#animation_player_upper.play("hang")
 				animation_player_lower.play("hang")
+				
+			var request_detach = sign(x_axis) == wall_normal.x
+			
+			if not should_wall_climb() or request_detach:
+				state = STATES.MOVE
 
 func accelerate_horizontally(horizontal_direction: float, delta:float) -> void:
 	var acceleration_amount: = acceleration
@@ -101,4 +110,9 @@ func jump() -> void:
 	velocity.y = -jump_amount
 	
 func should_wall_climb() -> bool:
-	return is_on_wall_only()
+	return (
+		ray_cast_upper.is_colliding()
+		and ray_cast_lower.is_colliding()
+		and is_on_wall_only()
+		
+	)
