@@ -1,7 +1,13 @@
 [gd_scene format=3 uid="uid://byf6c476ltbn1"]
 
 [ext_resource type="PackedScene" uid="uid://cwu7x8k2yah32" path="res://scenes/level_root.tscn" id="1_f3sb7"]
+[ext_resource type="Script" uid="uid://dnb5h642q3r2s" path="res://scenes/world.gd" id="1_tlwt5"]
+[ext_resource type="PackedScene" uid="uid://ckmtepb2m74a6" path="res://scenes/enemy_cannon.tscn" id="2_fj7yv"]
 
 [node name="World" type="Node2D" unique_id=1821565544]
+script = ExtResource("1_tlwt5")
 
 [node name="LevelRoot" parent="." unique_id=1550310060 instance=ExtResource("1_f3sb7")]
+
+[node name="EnemyCannon" parent="." unique_id=1306639570 instance=ExtResource("2_fj7yv")]
+position = Vector2(240, 128)
